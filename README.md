@@ -82,8 +82,14 @@ vagrant up
 ## Set Kubeconfig file variable
 
 ```shell
+#You need to have kubectl installed locally.
+winget install -e --id Kubernetes.kubectl
+```
+
+```shell
 cd vagrant-kubeadm-kubernetes
 cd configs
+# Go to system -> About -> Advanced system settings -> Environment variables -> System variables
 export KUBECONFIG=$(pwd)/config
 ```
 
