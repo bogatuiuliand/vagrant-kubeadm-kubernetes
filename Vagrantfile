@@ -1,4 +1,3 @@
-
 require "yaml"
 vagrant_root = File.dirname(File.expand_path(__FILE__))
 settings = YAML.load_file "#{vagrant_root}/settings.yaml"
@@ -95,4 +94,30 @@ Vagrant.configure("2") do |config|
     end
 
   end
-end 
+
+  # Run additional scripts on all nodes
+  ["controlplane", *(1..NUM_WORKER_NODES).map { |i| "node0#{i}" }].each do |node_name|
+    config.vm.define node_name do |node|
+      node.vm.provision "shell", inline: <<-SHELL
+        for script in /vagrant/scripts/alias.sh /vagrant/scripts/pre-requisites.sh; do
+          if [ -f "$script" ]; then
+            echo "Executing $script on #{node_name} as vagrant user"
+            sudo -u vagrant bash "$script"
+          fi
+        done
+      SHELL
+    end
+  end
+
+  # Convert all scripts to Unix format before execution to prevent Windows-style line ending issues
+  ["alias.sh", "pre-requisites.sh"].each do |script|
+    config.vm.provision "shell", inline: <<-SHELL
+      if command -v dos2unix &>/dev/null; then
+        dos2unix /vagrant/scripts/#{script}
+      else
+        apt-get update -y && apt-get install -y dos2unix
+        dos2unix /vagrant/scripts/#{script}
+      fi
+    SHELL
+  end
+end
